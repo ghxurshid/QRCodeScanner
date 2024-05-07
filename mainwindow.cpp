@@ -5,6 +5,7 @@
 #include <QCamera>
 #include <QVideoProbe>
 #include <QCameraViewfinder>
+#include <QGraphicsPixmapItem>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -14,15 +15,18 @@ MainWindow::MainWindow(QWidget *parent) :
 
     //Decoder configuration
     decoder.connect(&decoder, &QZXing::error, [](QString err) {
-        qDebug() << err;
+        //qDebug() << err;
     });
 
     decoder.connect(&decoder, &QZXing::decodingStarted, []() {
-        qDebug() << "Decoding is started ...";
+        //qDebug() << "Decoding is started ...";
     });
 
     decoder.connect(&decoder, &QZXing::decodingFinished, [](bool status) {
-        qDebug() << "Decoding finished with status: " << status;
+        if (status) {
+            qDebug() << "Decoding finished with status: " << status;
+        }
+
     });
 
     decoder.setDecoder( QZXing::DecoderFormat_QR_CODE | QZXing::DecoderFormat_EAN_13 );
@@ -56,8 +60,12 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
+static bool busy = false;
 void MainWindow::detectBarcodes(const QVideoFrame &frame)
 {
+    if (busy) return;
+
+    busy = true;
     QVideoFrame cloneFrame(frame);
     cloneFrame.map(QAbstractVideoBuffer::ReadOnly);
 
@@ -71,6 +79,12 @@ void MainWindow::detectBarcodes(const QVideoFrame &frame)
                        cloneFrame.bytesPerLine(),
                        imageFormat);
 
+        QGraphicsScene scene;
+        ui->graphicsView->setScene(&scene);
+        QPixmap pixmap = QPixmap::fromImage(image);
+        QGraphicsPixmapItem *pixmapItem = new QGraphicsPixmapItem(pixmap);
+        scene.addItem(pixmapItem);
+
         QString result = decoder.decodeImage(image);
         qDebug() << result;
     } else {
@@ -79,4 +93,5 @@ void MainWindow::detectBarcodes(const QVideoFrame &frame)
     }
 
     cloneFrame.unmap();
+    busy = false;
 }

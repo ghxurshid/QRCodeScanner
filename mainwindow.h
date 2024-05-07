@@ -4,7 +4,7 @@
 #include <QMainWindow>
 #include <QVideoFrame>
 
-#include <QZXing>
+#include <QZXing.h>
 
 namespace Ui {
 class MainWindow;
