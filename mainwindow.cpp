@@ -29,11 +29,20 @@ MainWindow::MainWindow(QWidget *parent) :
 
     });
 
-    decoder.setDecoder( QZXing::DecoderFormat_QR_CODE | QZXing::DecoderFormat_EAN_13 );
-
-    decoder.setSourceFilterType(QZXing::SourceFilter_ImageNormal | QZXing::SourceFilter_ImageInverted);
+    decoder.setDecoder( QZXing::DecoderFormat_QR_CODE );
     decoder.setSourceFilterType(QZXing::SourceFilter_ImageNormal);
     decoder.setTryHarderBehaviour(QZXing::TryHarderBehaviour_ThoroughScanning | QZXing::TryHarderBehaviour_Rotate);
+    qDebug() <<"getEnabledFormats" << decoder.getEnabledFormats();
+    qDebug() <<"getTryHarder" << decoder.getTryHarder();
+    qDebug() <<"getTryHarderBehaviour" << decoder.getTryHarderBehaviour();
+    qDebug() <<"getSourceFilterType" << decoder.getSourceFilterType();
+    qDebug() <<"getAllowedExtensions" << decoder.getAllowedExtensions();
+    qDebug() <<"foundedFormat" << decoder.foundedFormat();
+    qDebug() <<"charSet" << decoder.charSet();
+
+
+
+
 
     //Camera configuration
     QCamera *camera = new QCamera;
@@ -43,6 +52,10 @@ MainWindow::MainWindow(QWidget *parent) :
     camera->setViewfinder(viewfinder);
 
     camera->setCaptureMode(QCamera::CaptureVideo);
+
+    QCameraViewfinderSettings viewfinderSettings;
+
+    camera->setViewfinderSettings(viewfinderSettings);
 
     QVideoProbe *videoProbe = new QVideoProbe(this);
 
@@ -86,7 +99,7 @@ void MainWindow::detectBarcodes(const QVideoFrame &frame)
         scene.addItem(pixmapItem);
 
         QString result = decoder.decodeImage(image);
-        qDebug() << result;
+        //qDebug() << result;
     } else {
         // Формат не поддерживается напрямую, требуется преобразование
         // Здесь можно использовать конвертеры, например, для YUV -> RGB
