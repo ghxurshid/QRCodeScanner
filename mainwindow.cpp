@@ -3,7 +3,12 @@
 
 #include <QDebug>
 #include <QCamera>
+#include <QDialog>
+#include <QLineEdit>
 #include <QVideoProbe>
+#include <QFormLayout>
+#include <QListWidget>
+#include <QDialogButtonBox>
 #include <QCameraViewfinder>
 #include <QGraphicsPixmapItem>
 
@@ -13,7 +18,7 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    //Decoder configuration
+    // - - - - - - - - Decoder configuration - - - - - - - - - - - - - - -
     decoder.connect(&decoder, &QZXing::error, [](QString err) {
         //qDebug() << err;
     });
@@ -23,10 +28,6 @@ MainWindow::MainWindow(QWidget *parent) :
     });
 
     decoder.connect(&decoder, &QZXing::decodingFinished, [](bool status) {
-        if (status) {
-            qDebug() << "Decoding finished with status: " << status;
-        }
-
     });
 
     decoder.setDecoder( QZXing::DecoderFormat_QR_CODE );
@@ -41,31 +42,29 @@ MainWindow::MainWindow(QWidget *parent) :
     qDebug() <<"charSet" << decoder.charSet();
 
 
-
-
-
-    //Camera configuration
+    // - - - - - - - Camera configuration - - - - - - - - - - - - - - - -
     QCamera *camera = new QCamera;
-    QCameraViewfinder *viewfinder = new QCameraViewfinder(this);
-    viewfinder->setFixedSize(640, 480);
+//    QCameraViewfinder *viewfinder = new QCameraViewfinder(this);
 
-    camera->setViewfinder(viewfinder);
 
-    camera->setCaptureMode(QCamera::CaptureVideo);
+//    int _width = this->width() - 60;
+//    viewfinder->setGeometry(30, 0, _width, static_cast<int>(_width * 0.75));
+//    camera->setViewfinder(viewfinder);
+//    camera->setCaptureMode(QCamera::CaptureVideo);
 
-    QCameraViewfinderSettings viewfinderSettings;
+//    QCameraViewfinderSettings viewfinderSettings;
 
-    camera->setViewfinderSettings(viewfinderSettings);
+//    camera->setViewfinderSettings(viewfinderSettings);
 
-    QVideoProbe *videoProbe = new QVideoProbe(this);
+//    QVideoProbe *videoProbe = new QVideoProbe(this);
 
-    if (videoProbe->setSource(camera)) {
-        // Probing succeeded, videoProbe->isValid() should be true.
-        connect(videoProbe, SIGNAL(videoFrameProbed(QVideoFrame)),
-                this, SLOT(detectBarcodes(QVideoFrame)));
-    }
+//    if (videoProbe->setSource(camera)) {
+//        // Probing succeeded, videoProbe->isValid() should be true.
+//        connect(videoProbe, SIGNAL(videoFrameProbed(QVideoFrame)),
+//                this, SLOT(detectBarcodes(QVideoFrame)));
+//    }
 
-    camera->start();
+    //camera->start();
 }
 
 MainWindow::~MainWindow()
@@ -74,9 +73,12 @@ MainWindow::~MainWindow()
 }
 
 static bool busy = false;
+static int  skip = 0;
 void MainWindow::detectBarcodes(const QVideoFrame &frame)
 {
     if (busy) return;
+
+    if (skip ++ < 8) return;
 
     busy = true;
     QVideoFrame cloneFrame(frame);
@@ -92,19 +94,52 @@ void MainWindow::detectBarcodes(const QVideoFrame &frame)
                        cloneFrame.bytesPerLine(),
                        imageFormat);
 
-        QGraphicsScene scene;
-        ui->graphicsView->setScene(&scene);
-        QPixmap pixmap = QPixmap::fromImage(image);
-        QGraphicsPixmapItem *pixmapItem = new QGraphicsPixmapItem(pixmap);
-        scene.addItem(pixmapItem);
-
         QString result = decoder.decodeImage(image);
-        //qDebug() << result;
-    } else {
-        // Формат не поддерживается напрямую, требуется преобразование
-        // Здесь можно использовать конвертеры, например, для YUV -> RGB
+        if (result.size() > 0) {
+            ui->label->setText(result);
+        }
     }
 
     cloneFrame.unmap();
     busy = false;
+    skip = 0;
+}
+
+void MainWindow::on_pushButton_clicked()
+{qDebug() << "PushButton";
+    QDialog dialog(this);
+    QFormLayout form(&dialog);
+    // Add some text above the fields
+    form.addRow(new QLabel("Select Wi-Fi"));
+
+    //List of wi-fi devices
+    QListWidget* listView = new QListWidget(&dialog);
+    listView->resize(200, 150);
+
+    for(int i = 0 ; i < 10; i ++)
+        listView->addItem(QString(i));
+
+    form.addRow(listView);
+
+    //Edit area for password
+    QLineEdit *lineEdit = new QLineEdit(&dialog);
+
+    QString label = QString("Pass: ");
+    form.addRow(label, lineEdit);
+
+    // Add some standard buttons (Cancel/Ok) at the bottom of the dialog
+    QDialogButtonBox buttonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel,
+                               Qt::Horizontal, &dialog);
+    form.addRow(&buttonBox);
+
+    QObject::connect(&buttonBox, SIGNAL(accepted()), &dialog, SLOT(accept()));
+    QObject::connect(&buttonBox, SIGNAL(rejected()), &dialog, SLOT(reject()));
+
+    // Show the dialog as modal
+    if (dialog.exec() == QDialog::Accepted)
+    {
+        // If the user didn't dismiss the dialog, do something with the fields
+
+        int idx = listView->currentRow();
+    }
 }
