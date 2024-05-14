@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include <QVideoFrame>
+#include <QBluetoothSocket>
 
 #include <QZXing.h>
 
@@ -29,6 +30,8 @@ private:
     Ui::MainWindow *ui;
 
     QZXing decoder;
+    QBluetoothSocket* socket;
+
 };
 
 #endif // MAINWINDOW_H

@@ -11,12 +11,24 @@
 #include <QDialogButtonBox>
 #include <QCameraViewfinder>
 #include <QGraphicsPixmapItem>
+#include <QBluetoothDeviceDiscoveryAgent>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+
+    // - - - - - - Bluetooth socket configuration - - - - - - - - - - - -
+    socket = new QBluetoothSocket(QBluetoothServiceInfo::RfcommProtocol);
+
+    QObject::connect(socket, &QBluetoothSocket::connected, [this]() {
+        this->ui->pushButton->setStyleSheet("background-color: rgb(0, 255, 0);");
+    });
+
+    QObject::connect(socket, &QBluetoothSocket::disconnected, [this]() {
+        this->ui->pushButton->setStyleSheet("");
+    });
 
     // - - - - - - - - Decoder configuration - - - - - - - - - - - - - - -
     decoder.connect(&decoder, &QZXing::error, [](QString err) {
@@ -44,27 +56,23 @@ MainWindow::MainWindow(QWidget *parent) :
 
     // - - - - - - - Camera configuration - - - - - - - - - - - - - - - -
     QCamera *camera = new QCamera;
-//    QCameraViewfinder *viewfinder = new QCameraViewfinder(this);
+    QCameraViewfinder *viewfinder = new QCameraViewfinder(ui->frame);
+
+    viewfinder->setGeometry(QRect(QPoint(0, 0), QPoint(ui->frame->width(), ui->frame->height())));
+    camera->setViewfinder(viewfinder);
+
+    qDebug() << "viewfinder.geometry: " << viewfinder->geometry();
 
 
-//    int _width = this->width() - 60;
-//    viewfinder->setGeometry(30, 0, _width, static_cast<int>(_width * 0.75));
-//    camera->setViewfinder(viewfinder);
-//    camera->setCaptureMode(QCamera::CaptureVideo);
+    QVideoProbe *videoProbe = new QVideoProbe(this);
 
-//    QCameraViewfinderSettings viewfinderSettings;
+    if (videoProbe->setSource(camera)) {
+        // Probing succeeded, videoProbe->isValid() should be true.
+        connect(videoProbe, SIGNAL(videoFrameProbed(QVideoFrame)),
+                this, SLOT(detectBarcodes(QVideoFrame)));
+    }
 
-//    camera->setViewfinderSettings(viewfinderSettings);
-
-//    QVideoProbe *videoProbe = new QVideoProbe(this);
-
-//    if (videoProbe->setSource(camera)) {
-//        // Probing succeeded, videoProbe->isValid() should be true.
-//        connect(videoProbe, SIGNAL(videoFrameProbed(QVideoFrame)),
-//                this, SLOT(detectBarcodes(QVideoFrame)));
-//    }
-
-    //camera->start();
+    camera->start();
 }
 
 MainWindow::~MainWindow()
@@ -87,7 +95,8 @@ void MainWindow::detectBarcodes(const QVideoFrame &frame)
     const QImage::Format imageFormat = QVideoFrame::imageFormatFromPixelFormat(cloneFrame.pixelFormat());
     QImage image;
 
-    if (imageFormat != QImage::Format_Invalid) {
+    if (imageFormat != QImage::Format_Invalid)
+    {
         image = QImage(cloneFrame.bits(),
                        cloneFrame.width(),
                        cloneFrame.height(),
@@ -95,8 +104,15 @@ void MainWindow::detectBarcodes(const QVideoFrame &frame)
                        imageFormat);
 
         QString result = decoder.decodeImage(image);
-        if (result.size() > 0) {
+
+        if (result.size() > 0)
+        {
             ui->label->setText(result);
+
+            if (socket->isOpen())
+            {
+                socket->write(result.toUtf8());
+            }
         }
     }
 
@@ -106,18 +122,21 @@ void MainWindow::detectBarcodes(const QVideoFrame &frame)
 }
 
 void MainWindow::on_pushButton_clicked()
-{qDebug() << "PushButton";
+{
     QDialog dialog(this);
     QFormLayout form(&dialog);
     // Add some text above the fields
-    form.addRow(new QLabel("Select Wi-Fi"));
+    form.addRow(new QLabel("Select Bluetooth device"));
 
     //List of wi-fi devices
     QListWidget* listView = new QListWidget(&dialog);
     listView->resize(200, 150);
 
-    for(int i = 0 ; i < 10; i ++)
-        listView->addItem(QString(i));
+    QBluetoothDeviceDiscoveryAgent *discoveryAgent = new QBluetoothDeviceDiscoveryAgent(this);
+    QObject::connect(discoveryAgent, &QBluetoothDeviceDiscoveryAgent::deviceDiscovered,
+                     [listView](QBluetoothDeviceInfo deviceInfo) {
+        listView->addItem(QString(deviceInfo.name()) + " " + QString(deviceInfo.rssi()));
+    });
 
     form.addRow(listView);
 
@@ -141,5 +160,16 @@ void MainWindow::on_pushButton_clicked()
         // If the user didn't dismiss the dialog, do something with the fields
 
         int idx = listView->currentRow();
+        discoveryAgent->stop();
+        auto devices = discoveryAgent->discoveredDevices();
+
+        auto device = devices[idx];
+
+        if (socket != nullptr && socket->isOpen())
+        {
+            socket->disconnectFromService();
+        }
+
+        socket->connectToService(device.address(), QBluetoothUuid::SerialPort);
     }
 }
