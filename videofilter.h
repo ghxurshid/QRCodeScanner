@@ -18,6 +18,8 @@ private:
     VideoFilter *m_filter;
 };
 
+// - - - - - - - - - - - - - - - - - - - - - - - - -
+
 class VideoFilter : public QAbstractVideoFilter
 {
     Q_OBJECT

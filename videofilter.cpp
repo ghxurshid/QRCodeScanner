@@ -21,8 +21,6 @@ QVideoFrame VideoFilterRunnable::run(QVideoFrame *input, const QVideoSurfaceForm
     );
     input->unmap();
 
-    qDebug() << image.rect();
-
     m_filter->processFrame(image);
     return *input;
 }
@@ -39,9 +37,6 @@ QVideoFilterRunnable *VideoFilter::createFilterRunnable()
 
 void VideoFilter::processFrame(const QImage &image)
 {
-    // Здесь добавьте код для обработки изображения
-    QImage processedImage = image; // Ваша логика обработки
-
     // Emit the signal with the processed image if needed
-    emit newImageArrived(processedImage);
+    emit newImageArrived(image);
 }

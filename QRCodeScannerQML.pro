@@ -1,5 +1,19 @@
-QT += quick multimedia multimediawidgets bluetooth
+QT += quick multimedia bluetooth
 CONFIG += c++11
+
+CONFIG += qzxing_multimedia \
+          enable_decoder_1d_barcodes \
+          enable_decoder_qr_code \
+          enable_decoder_data_matrix \
+          enable_decoder_aztec \
+          enable_decoder_pdf17
+
+CONFIG(debug, debug|release) {
+    CONFIG += qml_debug
+} else {
+    DEFINES += QT_NO_DEBUG
+    DEFINES += QT_NO_DEBUG_OUTPUT
+}
 
 # The following define makes your compiler emit warnings if you use
 # any Qt feature that has been marked deprecated (the exact warnings
@@ -14,8 +28,8 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 SOURCES += \
         main.cpp \
-    videofilter.cpp \
-    qrcodedecoder.cpp
+        videofilter.cpp \
+        qrcodedecoder.cpp
 
 RESOURCES += qml.qrc
 
@@ -31,7 +45,8 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
 # - - - - - - - - - Custom additions - - - - - - - - - - -
-include(src/QZXing.pri)
+include(zxing/QZXing-components.pri)
+#include(deployment.pri)
 
 android {
     QT += androidextras
@@ -41,3 +56,20 @@ android {
 HEADERS += \
     videofilter.h \
     qrcodedecoder.h
+
+
+DISTFILES += \
+    android/AndroidManifest.xml \
+    android/gradle/wrapper/gradle-wrapper.jar \
+    android/gradlew \
+    android/res/values/libs.xml \
+    android/build.gradle \
+    android/gradle/wrapper/gradle-wrapper.properties \
+    android/gradlew.bat
+
+contains(ANDROID_TARGET_ARCH,armeabi-v7a) {
+    ANDROID_PACKAGE_SOURCE_DIR = \
+        $$PWD/android
+}
+
+message($$DEFINES)

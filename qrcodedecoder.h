@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QZXing.h>
+#include <QTime>
 
 class QRCodeDecoder : public QZXing
 {
@@ -15,6 +16,9 @@ signals:
 
 public slots:
     void processImage(const QImage &image);
+
+private:
+    bool busy;
 };
 
 #endif // IMAGEPROCESSOR_H
