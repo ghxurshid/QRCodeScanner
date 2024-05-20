@@ -28,8 +28,8 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 SOURCES += \
         main.cpp \
-        videofilter.cpp \
-        qrcodedecoder.cpp
+    bluetoothlist.cpp \
+    bluetoothdevice.cpp
 
 RESOURCES += qml.qrc
 
@@ -54,8 +54,8 @@ android {
 }
 
 HEADERS += \
-    videofilter.h \
-    qrcodedecoder.h
+    bluetoothlist.h \
+    bluetoothdevice.h
 
 
 DISTFILES += \

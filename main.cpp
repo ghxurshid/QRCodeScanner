@@ -2,14 +2,18 @@
 #include <QQmlApplicationEngine>
 #include <QDebug>
 
-#include "qrcodedecoder.h"
-#include "videofilter.h"
-
 #include <Qt>
 #include "QZXing.h"
 
+#include "bluetoothlist.h"
+#include "bluetoothdevice.h"
+
 int main(int argc, char *argv[])
 {
+
+    qmlRegisterType<BluetoothList>("Bluetooth", 1, 0, "BluetoothList");
+    qmlRegisterType<BluetoothDevice>("Bluetooth", 1, 0, "BluetoothDevice");
+
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
     QGuiApplication app(argc, argv);
     QQmlApplicationEngine engine;
