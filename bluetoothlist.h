@@ -7,7 +7,6 @@
 #include <QtBluetooth/QBluetoothLocalDevice>
 #include <QtBluetooth/QBluetoothDeviceInfo>
 
-
 class BluetoothList : public QAbstractListModel
 {
     Q_OBJECT
@@ -25,6 +24,9 @@ public:
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
     QVariant data(const QModelIndex &index, int role) const override;
 
+signals:
+    void deviceSelected(const QBluetoothDeviceInfo &deviceInfo);
+
 public slots:
     void onCancelled();
     void onDeviceDiscovered(const QBluetoothDeviceInfo &deviceInfo);
@@ -32,11 +34,14 @@ public slots:
     void onError(QBluetoothDeviceDiscoveryAgent::Error error);
     void onFinished();
 
+    void select(int index);
+
 protected:
     QHash<int, QByteArray> roleNames() const override;
 
 private:
     QBluetoothDeviceDiscoveryAgent m_agent;
+    QVector<QBluetoothDeviceInfo> m_devices;
 };
 
 #endif // BLUETOOTHLIST_H

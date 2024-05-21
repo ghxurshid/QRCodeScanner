@@ -17,12 +17,12 @@ ApplicationWindow {
     property int detectedTags: 0
     property string lastTag: ""
 
-    Rectangle
-    {
-        id: bgRect
-        color: "white"
-        anchors.fill: videoOutput
-    }
+//    Rectangle
+//    {
+//        id: bgRect
+//        color: "white"
+//        anchors.fill: videoOutput
+//    }
 
     Text
     {
@@ -83,15 +83,17 @@ ApplicationWindow {
         }
     }
 
-    QZXingFilter
-    {
+    QZXingFilter {
         id: zxingFilter
         captureRect: {
             videoOutput.contentRect;
             videoOutput.sourceRect;
-            return videoOutput.mapRectToSource(videoOutput.mapNormalizedRectToItem(Qt.rect(
-                                                                                       0.25, 0.25, 0.5, 0.5
-                                                                                       )));
+            return videoOutput.mapRectToSource(videoOutput.mapNormalizedRectToItem(Qt.rect( 0.25, 0.25, 0.5, 0.5 )));
+//            return videoOutput.mapRectToSource(Qt.rect(
+//                                                   (videoOutput.width - 240) / 2,
+//                                                   (videoOutput.height - 240) / 2,
+//                                                   240, 240
+//                                               ));
         }
 
         decoder {
@@ -102,29 +104,24 @@ ApplicationWindow {
 
                 window.detectedTags++;
                 window.lastTag = tag;
+
+                if (window.lastTag != tag)
+                    bluetooth_device.sendData(tag);
             }
 
             tryHarder: false
         }
 
-        onDecodingStarted:
-        {
-            // console.log("started");
-        }
-
         property int framesDecoded: 0
         property real timePerFrameDecode: 0
 
-        onDecodingFinished:
-        {
+        onDecodingFinished: {
             timePerFrameDecode = (decodeTime + framesDecoded * timePerFrameDecode) / (framesDecoded + 1);
             framesDecoded++;
-            //console.log("frame finished: " + succeeded, decodeTime, timePerFrameDecode, framesDecoded);
         }
     }
 
-    Text
-    {
+    Text {
         id: text2
         wrapMode: Text.Wrap
         font.pixelSize: 20
@@ -157,12 +154,54 @@ ApplicationWindow {
     Rectangle {
         id: connectButton
         width: parent.width * 0.8
-        height: 55
+        height: 75
         radius: 10
         anchors {
             horizontalCenter: parent.horizontalCenter
             bottom: parent.bottom
             bottomMargin: 55
+        }
+
+        Rectangle {
+            height: 20
+            width: 20
+            radius: 10
+            color: bluetooth_device.status === 0 ? "green" : "gray"
+            anchors {
+                left: parent.left
+                leftMargin: 20
+                verticalCenter: parent.verticalCenter
+            }
+        }
+
+        Text {
+            text: bluetooth_device.name
+            anchors {
+                top: parent.top
+                left: parent.left
+                topMargin: 10
+                leftMargin: 60
+            }
+
+            font {
+                bold: true
+                pointSize: 18
+            }
+        }
+
+        Text {
+            text: bluetooth_device.status === 0 ? qsTr("Connected") : qsTr("Disconnected")
+            anchors {
+                bottom: parent.bottom
+                left: parent.left
+                bottomMargin: 10
+                leftMargin: 60
+            }
+
+            font {
+                bold: false
+                pointSize: 14
+            }
         }
 
         MouseArea {
@@ -171,6 +210,10 @@ ApplicationWindow {
                 modalBox.state = "open"
             }
         }
+    }
+
+    BluetoothDevice {
+        id: bluetooth_device
     }
 
     Rectangle {
@@ -207,34 +250,39 @@ ApplicationWindow {
             }
         }
 
-        AnimatedImage {
-            id: loader
-            height: 20
-            width: 120
-            anchors.bottom: parent.bottom
-
-            source: "qrc:/resources/loader.gif"
-        }
-
         ListView {
             id: listView
+            spacing: 3
+            clip: true
             anchors {
                 fill: parent
                 margins: 20
                 bottomMargin: 40
             }
-            clip: true
+            model: BluetoothList {
+                onDeviceSelected: {
+                    bluetooth_device.setSelectedDevice(deviceInfo)
+                }
+            }
 
-//            model: ListModel {
-//                ListElement {name: "HC06"; address: "02:51:A1:C5:68:C9"; rssi: -56; isValid: true}
-//                ListElement {name: "HC06"; address: "02:51:A1:C5:68:C9"; rssi: -56; isValid: true}
-//                ListElement {name: "HC06"; address: "02:51:A1:C5:68:C9"; rssi: -56; isValid: true}
-//                ListElement {name: "HC06"; address: "02:51:A1:C5:68:C9"; rssi: -56; isValid: true}
-//                ListElement {name: "HC06"; address: "02:51:A1:C5:68:C9"; rssi: -56; isValid: true}
-//            }
-            model: BluetoothList {}
+            headerPositioning: ListView.OverlayFooter
+            footerPositioning: ListView.OverlayFooter
 
-            spacing: 3
+            header: Rectangle {
+                width: parent.width
+                height: 50
+                color: "#F0F0F0"
+
+                Text {
+                    id: labelText
+                    text: qsTr("Bluetooth devices")// This is available in all editors.
+                    font.pointSize: 16
+                    font.bold: true
+                    anchors.centerIn: parent
+                }
+                z: 2
+            }
+
             delegate: Item {
                 height: 55
                 width: parent.width
@@ -255,7 +303,7 @@ ApplicationWindow {
                     anchors {
                         top: parent.top
                         left: parent.left
-                        topMargin: 5
+                        topMargin: 8
                         leftMargin: 10
                     }
                 }
@@ -268,7 +316,7 @@ ApplicationWindow {
                     anchors {
                         left: parent.left
                         bottom: parent.bottom
-                        bottomMargin: 5
+                        bottomMargin: 8
                         leftMargin: 10
                     }
                 }
@@ -285,9 +333,25 @@ ApplicationWindow {
                         verticalCenter: parent.verticalCenter
                     }
                 }
-            }
-            footer: Item {
 
+                MouseArea {
+                    anchors.fill: parent
+                    onClicked: listView.model.select(index)
+                }
+            }
+
+            footer: Rectangle {
+                width: parent.width
+                height: 44
+                z: 2
+
+                AnimatedImage {
+                    id: loader
+                    height: 44
+                    width: 60
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    source: "qrc:/resources/loader.gif"
+                }
             }
         }
     }
