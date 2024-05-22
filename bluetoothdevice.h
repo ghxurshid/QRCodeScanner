@@ -19,6 +19,7 @@ public:
         Connecting,
         Disconnected
     };
+    Q_ENUM(Status)
 
     explicit BluetoothDevice(QObject *parent = nullptr);
     ~BluetoothDevice();

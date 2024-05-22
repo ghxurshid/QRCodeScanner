@@ -17,15 +17,7 @@ ApplicationWindow {
     property int detectedTags: 0
     property string lastTag: ""
 
-//    Rectangle
-//    {
-//        id: bgRect
-//        color: "white"
-//        anchors.fill: videoOutput
-//    }
-
-    Text
-    {
+    Text {
         id: text1
         wrapMode: Text.Wrap
         font.pixelSize: 20
@@ -34,8 +26,8 @@ ApplicationWindow {
         z: 50
         text: "Tags detected: " + detectedTags
     }
-    Text
-    {
+
+    Text {
         id: fps
         font.pixelSize: 20
         anchors.top: parent.top
@@ -44,8 +36,7 @@ ApplicationWindow {
         text: (1000 / zxingFilter.timePerFrameDecode).toFixed(0) + "fps"
     }
 
-    Camera
-    {
+    Camera {
         id:camera
         focus {
             focusMode: CameraFocus.FocusContinuous
@@ -53,8 +44,7 @@ ApplicationWindow {
         }
     }
 
-    VideoOutput
-    {
+    VideoOutput {
         id: videoOutput
         source: camera
         anchors.top: text1.bottom
@@ -63,6 +53,7 @@ ApplicationWindow {
         anchors.right: parent.right
         autoOrientation: true
         filters: [ zxingFilter ]
+
         MouseArea {
             anchors.fill: parent
             onClicked: {
@@ -72,14 +63,17 @@ ApplicationWindow {
                 modalBox.state = "close"
             }
         }
+
         Rectangle {
             id: captureZone
-            color: "green"
-            opacity: 0.2
+            color: "transparent"
+            opacity: 0.5
             width: 240
             height: 240
             anchors.centerIn: parent
             radius: 16
+            border.color: "white"
+            border.width: 4
         }
     }
 
@@ -89,35 +83,27 @@ ApplicationWindow {
             videoOutput.contentRect;
             videoOutput.sourceRect;
             return videoOutput.mapRectToSource(videoOutput.mapNormalizedRectToItem(Qt.rect( 0.25, 0.25, 0.5, 0.5 )));
-//            return videoOutput.mapRectToSource(Qt.rect(
-//                                                   (videoOutput.width - 240) / 2,
-//                                                   (videoOutput.height - 240) / 2,
-//                                                   240, 240
-//                                               ));
         }
 
         decoder {
-            enabledDecoders: QZXing.DecoderFormat_EAN_13 | QZXing.DecoderFormat_CODE_39 | QZXing.DecoderFormat_QR_CODE
+            enabledDecoders: QZXing.DecoderFormat_EAN_13 | QZXing.DecoderFormat_CODE_39 | QZXing.DecoderFormat_QR_CODE;
 
             onTagFound: {
                 console.log(tag + " | " + decoder.foundedFormat() + " | " + decoder.charSet());
-
                 window.detectedTags++;
+                if (window.lastTag != tag) bluetooth_device.sendData(tag);
                 window.lastTag = tag;
-
-                if (window.lastTag != tag)
-                    bluetooth_device.sendData(tag);
             }
 
-            tryHarder: false
-        }
+            tryHarder: false;
 
-        property int framesDecoded: 0
-        property real timePerFrameDecode: 0
+            property int framesDecoded: 0
+            property real timePerFrameDecode: 0
 
-        onDecodingFinished: {
-            timePerFrameDecode = (decodeTime + framesDecoded * timePerFrameDecode) / (framesDecoded + 1);
-            framesDecoded++;
+            onDecodingFinished: {
+                timePerFrameDecode = (decodeTime + framesDecoded * timePerFrameDecode) / (framesDecoded + 1);
+                framesDecoded++;
+            }
         }
     }
 
@@ -127,8 +113,7 @@ ApplicationWindow {
         font.pixelSize: 20
         anchors.bottom: parent.bottom
         anchors.left: parent.left
-        z: 50
-        text: "Last tag: " + lastTag
+        text: qsTr("Data: " + window.lastTag)
     }
 
     Switch {
@@ -148,7 +133,6 @@ ApplicationWindow {
             }
         }
         font.family: Qt.platform.os === 'android' ? 'Droid Sans Mono' : 'Monospace'
-        font.pixelSize: Screen.pixelDensity * 5
     }
 
     Rectangle {
@@ -166,11 +150,27 @@ ApplicationWindow {
             height: 20
             width: 20
             radius: 10
-            color: bluetooth_device.status === 0 ? "green" : "gray"
+            color: bluetooth_device.status === BluetoothDevice.Connected ? "green" :
+                                                                           bluetooth_device.status === BluetoothDevice.Connecting ? "yellow" : "gray"
             anchors {
                 left: parent.left
                 leftMargin: 20
                 verticalCenter: parent.verticalCenter
+            }
+
+            SequentialAnimation on opacity {
+                loops: Animation.Infinite
+                running: bluetooth_device.status === 1
+                NumberAnimation {
+                    from: 1.0
+                    to: 0.3
+                    duration: 500 // Время анимации в миллисекундах
+                }
+                NumberAnimation {
+                    from: 0.3
+                    to: 1.0
+                    duration: 500 // Время анимации в миллисекундах
+                }
             }
         }
 
@@ -190,7 +190,8 @@ ApplicationWindow {
         }
 
         Text {
-            text: bluetooth_device.status === 0 ? qsTr("Connected") : qsTr("Disconnected")
+            text: bluetooth_device.status === BluetoothDevice.Connected ? qsTr("Connected") :
+                                                                          bluetooth_device.status === BluetoothDevice.Connecting ? qsTr("Connecting ...") : qsTr("Disconnected")
             anchors {
                 bottom: parent.bottom
                 left: parent.left
@@ -336,7 +337,10 @@ ApplicationWindow {
 
                 MouseArea {
                     anchors.fill: parent
-                    onClicked: listView.model.select(index)
+                    onClicked: {
+                        listView.model.select(index)
+                        modalBox.state = "close"
+                    }
                 }
             }
 
@@ -356,3 +360,4 @@ ApplicationWindow {
         }
     }
 }
+

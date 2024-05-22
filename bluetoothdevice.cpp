@@ -21,7 +21,7 @@ BluetoothDevice::~BluetoothDevice()
 }
 
 QString BluetoothDevice::name()
-{
+{    
     return m_selectedDevice.name();
 }
 
@@ -84,6 +84,7 @@ void BluetoothDevice::onErrorOccured(QBluetoothSocket::SocketError error)
 
 void BluetoothDevice::sendData(QString data)
 {
+    qDebug() << data;
     if (m_socket->isOpen()) {
         m_socket->write(data.toUtf8());
     }

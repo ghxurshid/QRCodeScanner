@@ -14,7 +14,6 @@ int main(int argc, char *argv[])
 
     qmlRegisterType<BluetoothList>("Bluetooth", 1, 0, "BluetoothList");
     qmlRegisterType<BluetoothDevice>("Bluetooth", 1, 0, "BluetoothDevice");
-    //qmlRegisterType<QBluetoothDeviceInfo>("Bluetooth", 1, 0, "QBluetoothDeviceInfo");
 
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
     QGuiApplication app(argc, argv);
