@@ -71,11 +71,13 @@ void BluetoothDevice::onDisconnected()
 
 void BluetoothDevice::onStateChanged(QBluetoothSocket::SocketState state)
 {
+    Q_UNUSED(state)
     emit statusChanged();
 }
 
 void BluetoothDevice::onErrorOccured(QBluetoothSocket::SocketError error)
 {
+    Q_UNUSED(error)
     if (m_selectedDevice.isValid())
     {
         QTimer::singleShot(1000, this, SLOT(reconnect()));
@@ -86,7 +88,10 @@ void BluetoothDevice::sendData(QString data)
 {
     qDebug() << data;
     if (m_socket->isOpen()) {
-        m_socket->write(data.toUtf8());
+        auto packet = data.toUtf8();
+        packet.push_back('\r');
+        packet.push_back('\n');
+        m_socket->write(packet);
     }
 }
 

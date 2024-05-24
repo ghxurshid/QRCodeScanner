@@ -29,7 +29,8 @@ DEFINES += QT_DEPRECATED_WARNINGS
 SOURCES += \
         main.cpp \
     bluetoothlist.cpp \
-    bluetoothdevice.cpp
+    bluetoothdevice.cpp \
+    activitymanager.cpp
 
 RESOURCES += qml.qrc
 
@@ -55,7 +56,8 @@ android {
 
 HEADERS += \
     bluetoothlist.h \
-    bluetoothdevice.h
+    bluetoothdevice.h \
+    activitymanager.h
 
 
 DISTFILES += \

@@ -14,8 +14,20 @@ ApplicationWindow {
     height: 480
     title: "Qt QZXing Filter Test"
 
+    Component.onCompleted: {
+        activityManager.keepScreenOn(true);
+    }
+
+    onClosing: {
+        activityManager.keepScreenOn(false);
+    }
+
     property int detectedTags: 0
     property string lastTag: ""
+
+    ActivityManager {
+        id: activityManager
+    }
 
     Text {
         id: text1
@@ -86,24 +98,24 @@ ApplicationWindow {
         }
 
         decoder {
-            enabledDecoders: QZXing.DecoderFormat_EAN_13 | QZXing.DecoderFormat_CODE_39 | QZXing.DecoderFormat_QR_CODE;
+            enabledDecoders: QZXing.DecoderFormat_QR_CODE;
 
             onTagFound: {
                 console.log(tag + " | " + decoder.foundedFormat() + " | " + decoder.charSet());
                 window.detectedTags++;
-                if (window.lastTag != tag) bluetooth_device.sendData(tag);
+                bluetooth_device.sendData(tag);
                 window.lastTag = tag;
             }
 
             tryHarder: false;
+        }
 
-            property int framesDecoded: 0
-            property real timePerFrameDecode: 0
+        property int framesDecoded: 0
+        property real timePerFrameDecode: 0
 
-            onDecodingFinished: {
-                timePerFrameDecode = (decodeTime + framesDecoded * timePerFrameDecode) / (framesDecoded + 1);
-                framesDecoded++;
-            }
+        onDecodingFinished: {
+            timePerFrameDecode = (decodeTime + framesDecoded * timePerFrameDecode) / (framesDecoded + 1);
+            framesDecoded++;
         }
     }
 
@@ -151,7 +163,7 @@ ApplicationWindow {
             width: 20
             radius: 10
             color: bluetooth_device.status === BluetoothDevice.Connected ? "green" :
-                                                                           bluetooth_device.status === BluetoothDevice.Connecting ? "yellow" : "gray"
+                   bluetooth_device.status === BluetoothDevice.Connecting ? "yellow" : "gray"
             anchors {
                 left: parent.left
                 leftMargin: 20

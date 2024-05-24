@@ -44,7 +44,7 @@ public slots:
     void sendData(QString data);
 
 protected:
-    void connectToSelectedDevice();
+    void connectToSelectedDevice();  
 
 private:
     int m_status;
