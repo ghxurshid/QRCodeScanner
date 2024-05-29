@@ -7,7 +7,13 @@ BluetoothDevice::BluetoothDevice(QObject *parent) : QObject(parent)
     QObject::connect(m_socket, &QBluetoothSocket::connected, this, &BluetoothDevice::onConnected);
     QObject::connect(m_socket, &QBluetoothSocket::disconnected, this, &BluetoothDevice::onDisconnected);
     QObject::connect(m_socket, &QBluetoothSocket::stateChanged, this, &BluetoothDevice::onStateChanged);
+    QObject::connect(m_socket, &QBluetoothSocket::readyRead, this, &BluetoothDevice::onDataReceived);
     QObject::connect(m_socket, QOverload<QBluetoothSocket::SocketError>::of(&QBluetoothSocket::error), this, &BluetoothDevice::onErrorOccured);
+
+    QTimer::singleShot(1000, this, [this](){
+        QString text = "*1-11,1-12,2-34,2-45,3-17,4-26,#";
+        emit dataReceived(text);
+    });
 }
 
 BluetoothDevice::~BluetoothDevice()
@@ -87,11 +93,19 @@ void BluetoothDevice::onErrorOccured(QBluetoothSocket::SocketError error)
 void BluetoothDevice::sendData(QString data)
 {
     qDebug() << data;
-    if (m_socket->isOpen()) {
+    if (m_socket && m_socket->isOpen()) {
         auto packet = data.toUtf8();
         packet.push_back('\r');
         packet.push_back('\n');
         m_socket->write(packet);
+    }
+}
+
+void BluetoothDevice::onDataReceived()
+{
+    if (m_socket && m_socket->isOpen()) {
+        auto data = m_socket->readAll();
+        emit dataReceived(QString(data));
     }
 }
 

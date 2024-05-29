@@ -22,8 +22,8 @@ ApplicationWindow {
         activityManager.keepScreenOn(false);
     }
 
-    property int detectedTags: 0
     property string lastTag: ""
+    property int detectedTags: 0
 
     ActivityManager {
         id: activityManager
@@ -32,11 +32,18 @@ ApplicationWindow {
     Text {
         id: text1
         wrapMode: Text.Wrap
-        font.pixelSize: 20
+        font.pixelSize: 14
         anchors.top: parent.top
         anchors.left: parent.left
         z: 50
         text: "Tags detected: " + detectedTags
+    }
+
+    ComboBox {
+        id: comboBox
+        anchors.top: parent.top
+        anchors.horizontalCenter: parent.horizontalCenter
+        currentIndex: -1 // Ничего не выбрано изначально
     }
 
     Text {
@@ -48,17 +55,15 @@ ApplicationWindow {
         text: (1000 / zxingFilter.timePerFrameDecode).toFixed(0) + "fps"
     }
 
-    Camera {
-        id:camera
-        focus {
-            focusMode: CameraFocus.FocusContinuous
-            focusPointMode: CameraFocus.FocusPointAuto
-        }
-    }
-
     VideoOutput {
         id: videoOutput
-        source: camera
+        source: Camera {
+            id:camera
+            focus {
+                focusMode: CameraFocus.FocusContinuous
+                focusPointMode: CameraFocus.FocusPointAuto
+            }
+        }
         anchors.top: text1.bottom
         anchors.bottom: text2.top
         anchors.left: parent.left
@@ -87,6 +92,15 @@ ApplicationWindow {
             border.color: "white"
             border.width: 4
         }
+
+        Text {
+            id: debug
+            text: qsTr("Received:")
+            anchors.top: parent.top
+            anchors.topMargin: 50
+            color: "white"
+            anchors.horizontalCenter: parent.horizontalCenter
+        }
     }
 
     QZXingFilter {
@@ -101,9 +115,10 @@ ApplicationWindow {
             enabledDecoders: QZXing.DecoderFormat_QR_CODE;
 
             onTagFound: {
-                console.log(tag + " | " + decoder.foundedFormat() + " | " + decoder.charSet());
+                //console.log(tag + " | " + decoder.foundedFormat() + " | " + decoder.charSet());
                 window.detectedTags++;
-                bluetooth_device.sendData(tag);
+                if (comboBox.displayText === tag) bluetooth_device.sendData("ok");
+                else bluetooth_device.sendData("error");
                 window.lastTag = tag;
             }
 
@@ -163,7 +178,7 @@ ApplicationWindow {
             width: 20
             radius: 10
             color: bluetooth_device.status === BluetoothDevice.Connected ? "green" :
-                   bluetooth_device.status === BluetoothDevice.Connecting ? "yellow" : "gray"
+                                                                           bluetooth_device.status === BluetoothDevice.Connecting ? "yellow" : "gray"
             anchors {
                 left: parent.left
                 leftMargin: 20
@@ -227,6 +242,18 @@ ApplicationWindow {
 
     BluetoothDevice {
         id: bluetooth_device
+        onDataReceived: {
+            debug.text = data;
+
+            var text = data;
+            var regex = /^\*([^,]+,)*([^,]+)\#$/;
+
+            if (regex.test(text)) {
+                text = text.slice(1, -1);
+                var options = text.split(',');
+                comboBox.model = options
+            }
+        }
     }
 
     Rectangle {

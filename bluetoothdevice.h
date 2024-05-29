@@ -32,6 +32,8 @@ signals:
     void statusChanged();
     void errorOccured(QString message);
 
+    void dataReceived(QString data);
+
 public slots:
     void setSelectedDevice(const QBluetoothDeviceInfo deviceInfo);
     void reconnect();
@@ -42,6 +44,7 @@ public slots:
     void onErrorOccured(QBluetoothSocket::SocketError error);
 
     void sendData(QString data);
+    void onDataReceived();
 
 protected:
     void connectToSelectedDevice();  
