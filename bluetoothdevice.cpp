@@ -10,8 +10,39 @@ BluetoothDevice::BluetoothDevice(QObject *parent) : QObject(parent)
     QObject::connect(m_socket, &QBluetoothSocket::readyRead, this, &BluetoothDevice::onDataReceived);
     QObject::connect(m_socket, QOverload<QBluetoothSocket::SocketError>::of(&QBluetoothSocket::error), this, &BluetoothDevice::onErrorOccured);
 
-    QTimer::singleShot(1000, this, [this](){
-        QString text = "*1-11,1-12,2-34,2-45,3-17,4-26,#";
+//    QTimer::singleShot(1000, this, [this](){
+//        QString text = "*1-11,";
+//        emit dataReceived(text);
+//    });
+
+//    QTimer::singleShot(1200, this, [this](){
+//        QString text = "1-12,2-34,2-45,3";
+//        emit dataReceived(text);
+//    });
+
+//    QTimer::singleShot(1400, this, [this](){
+//        QString text = "-17,4-26*";
+//        emit dataReceived(text);
+//    });
+
+
+//    QTimer::singleShot(1600, this, [this](){
+//        QString text = "*1-11,";
+//        emit dataReceived(text);
+//    });
+
+//    QTimer::singleShot(1800, this, [this](){
+//        QString text = "1-12,2-34,2-45,3";
+//        emit dataReceived(text);
+//    });
+
+//    QTimer::singleShot(2000, this, [this](){
+//        QString text = "-17,4-26#";
+//        emit dataReceived(text);
+//    });
+
+    QTimer::singleShot(2000, this, [this](){
+        QString text = "*1-11,1-12,2-34,2-45,3-17,4-26,4-33,4-57,4-75,5-00,5-36,5-44,5-73,6-51,6-61,6-65,6-73,7-41,7-53,7-71,9-81,9-82,9-91,7-58,3-39,5-42,8-68,2-79,4-94,6-07,8-55,1-47,3-62,5-83,7-90,2-16,4-28,6-34,9-51,1-73,3-89,5-02,7-15,8-26,9-31,4-48,6-54,7-65,9-87,2-93#";
         emit dataReceived(text);
     });
 }

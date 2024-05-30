@@ -99,6 +99,7 @@ ApplicationWindow {
             anchors.top: parent.top
             anchors.topMargin: 50
             color: "white"
+            visible: false
             anchors.horizontalCenter: parent.horizontalCenter
         }
     }
@@ -242,16 +243,46 @@ ApplicationWindow {
 
     BluetoothDevice {
         id: bluetooth_device
+
+        property string buffer: ""
+
+        function handleText(txt) {
+
+            txt = txt.slice(1, -1);
+            var options = txt.split(',');
+            comboBox.model = options
+        }
+
         onDataReceived: {
             debug.text = data;
 
             var text = data;
-            var regex = /^\*([^,]+,)*([^,]+)\#$/;
+            var regexBegin = /^\*[^#*]*$/;
+            var regexMiddle = /^[^#*]*$/;
+            var regexEnd = /^[^*#].*#/;
+            var regexFull = /^\*([^,]+,)*([^,]+)\#$/;
 
-            if (regex.test(text)) {
-                text = text.slice(1, -1);
-                var options = text.split(',');
-                comboBox.model = options
+
+            if (regexFull.test(text)) {
+                //console.log(text)
+                bluetooth_device.handleText(text)
+            } else if (regexBegin.test(text)) {
+                bluetooth_device.buffer = text
+                //console.log("Begin: " + bluetooth_device.buffer)
+            } else if (regexMiddle.test(text)) {
+                if (bluetooth_device.buffer.length > 0) {
+                    bluetooth_device.buffer += text
+                    //console.log("Middle: " + bluetooth_device.buffer)
+                }
+            } else if (regexEnd.test(text)) {
+                if (bluetooth_device.buffer.length > 0) {
+                    bluetooth_device.buffer += text
+                    //console.log("End: " + bluetooth_device.buffer)
+                    if (regexFull.test(bluetooth_device.buffer)) {
+                        bluetooth_device.handleText(bluetooth_device.buffer)
+                    }
+                }
+                bluetooth_device.buffer = ""
             }
         }
     }
